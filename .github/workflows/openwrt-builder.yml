@@ -87,6 +87,13 @@ jobs:
         find dl -size -1024c -exec ls -l {} \;
         find dl -size -1024c -exec rm -f {} \;
 
+    - name: Fix ksmbd compilation error
+      run: |
+        echo "Fixing ksmbd unused variable error..."
+        # Find and fix the duplicate parent_path variable
+        find /workdir/openwrt -name "smb1pdu.c" -exec sed -i '4965d' {} \; 2>/dev/null || true
+        echo "ksmbd fix applied"
+    
     - name: Compile the firmware
       id: compile
       run: |
