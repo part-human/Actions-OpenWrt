@@ -18,6 +18,28 @@
 
 # Modify hostname
 #sed -i 's/OpenWrt/P3TERX-Router/g' package/base-files/files/bin/config_generate
+#!/bin/bash
+# diy-part2.sh - Custom modifications for OpenWrt build
+
+# ============================================
+# Disable ksmbd to avoid compilation errors
+# ============================================
+echo "========================================="
+echo "Disabling ksmbd to prevent build errors..."
+echo "========================================="
+
+if [ -f .config ]; then
+    # Remove all ksmbd related lines
+    sed -i '/ksmbd/d' .config
+    
+    # Explicitly disable ksmbd options
+    echo "# CONFIG_PACKAGE_kmod-fs-ksmbd is not set" >> .config
+    echo "# CONFIG_PACKAGE_ksmbd-server is not set" >> .config
+    echo "# CONFIG_PACKAGE_ksmbd-utils is not set" >> .config
+    
+    echo "✅ ksmbd disabled"
+fi
+
 # ============================================
 # Increase network driver ring buffer size
 # ============================================
@@ -60,5 +82,5 @@ if [ -d "target/linux/ipq40xx" ]; then
 fi
 
 echo "========================================="
-echo "Ring buffer modification complete"
+echo "All modifications complete!"
 echo "========================================="
