@@ -100,6 +100,14 @@ jobs:
         cd openwrt
         $GITHUB_WORKSPACE/$DIY_P2_SH
         
+    - name: Fix missing dependencies
+      run: |
+        cd openwrt
+        # Install any missing feed packages
+        ./scripts/feeds install -a
+        # Check config
+        make defconfig
+     
     - name: Download package
       id: package
       run: |
