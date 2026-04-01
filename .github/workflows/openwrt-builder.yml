@@ -77,6 +77,25 @@ jobs:
         chmod +x $DIY_P2_SH
         cd openwrt
         $GITHUB_WORKSPACE/$DIY_P2_SH
+        
+    - name: Remove ksmbd from build
+      run: |
+        cd openwrt
+        echo "Removing ksmbd from build..."
+        # Remove any existing ksmbd config entries
+        sed -i '/CONFIG_PACKAGE_ksmbd/d' .config
+        # Explicitly disable ksmbd packages
+        echo "# CONFIG_PACKAGE_ksmbd-server is not set" >> .config
+        echo "# CONFIG_PACKAGE_ksmbd-utils is not set" >> .config
+        # Regenerate config
+        make defconfig
+        # Verify removal
+        if grep -q "ksmbd" .config; then
+          echo "WARNING: ksmbd still found in config"
+          grep "ksmbd" .config
+        else
+          echo "✓ ksmbd successfully removed from build"
+        fi
 
     - name: Download package
       id: package
@@ -87,12 +106,6 @@ jobs:
         find dl -size -1024c -exec ls -l {} \;
         find dl -size -1024c -exec rm -f {} \;
 
-    - name: Fix ksmbd compilation error
-      run: |
-        echo "Fixing ksmbd unused variable error..."
-        # Find and fix the duplicate parent_path variable
-        find /workdir/openwrt -name "smb1pdu.c" -exec sed -i '4965d' {} \; 2>/dev/null || true
-        echo "ksmbd fix applied"
     
     - name: Compile the firmware
       id: compile
