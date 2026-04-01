@@ -56,7 +56,29 @@ jobs:
         df -hT $PWD
         git clone $REPO_URL -b $REPO_BRANCH openwrt
         ln -sf /workdir/openwrt $GITHUB_WORKSPACE/openwrt
-
+        
+    - name: Force remove ksmbd from build
+      run: |
+        cd openwrt
+        
+        # Remove ksmbd from all feed packages
+        echo "Removing ksmbd from feeds..."
+        rm -rf package/kernel/ksmbd
+        rm -rf feeds/packages/net/ksmbd 2>/dev/null || true
+        rm -rf feeds/kernel/ksmbd 2>/dev/null || true
+        
+        # Blacklist ksmbd in .config
+        echo "# CONFIG_PACKAGE_ksmbd is not set" >> .config
+        echo "# CONFIG_PACKAGE_ksmbd-server is not set" >> .config  
+        echo "# CONFIG_PACKAGE_ksmbd-utils is not set" >> .config
+        echo "# CONFIG_KSMBD is not set" >> .config
+        
+        # Remove from any existing config
+        sed -i '/ksmbd/d' .config
+        sed -i '/KSMBD/d' .config
+        
+        echo "ksmbd forcefully removed"
+        
     - name: Load custom feeds
       run: |
         [ -e $FEEDS_CONF ] && mv $FEEDS_CONF openwrt/feeds.conf.default
@@ -78,25 +100,6 @@ jobs:
         cd openwrt
         $GITHUB_WORKSPACE/$DIY_P2_SH
         
-    - name: Remove ksmbd from build
-      run: |
-        cd openwrt
-        echo "Removing ksmbd from build..."
-        # Remove any existing ksmbd config entries
-        sed -i '/CONFIG_PACKAGE_ksmbd/d' .config
-        # Explicitly disable ksmbd packages
-        echo "# CONFIG_PACKAGE_ksmbd-server is not set" >> .config
-        echo "# CONFIG_PACKAGE_ksmbd-utils is not set" >> .config
-        # Regenerate config
-        make defconfig
-        # Verify removal
-        if grep -q "ksmbd" .config; then
-          echo "WARNING: ksmbd still found in config"
-          grep "ksmbd" .config
-        else
-          echo "✓ ksmbd successfully removed from build"
-        fi
-
     - name: Download package
       id: package
       run: |
